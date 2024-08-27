@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, MenuItem, Box, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
+import { Container, TextField, Typography, Box, CssBaseline, MenuItem } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import MenuBar from './MenuBar'; // Importa el MenuBar
+import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import MenuBar from './MenuBar';
 import BackButton from './BackButton';
 import SubmitButton from './SubmitButton';
+import { useTheme } from '@mui/material/styles'; // Importar el tema
 
 export default function EditExercise() {
+  const theme = useTheme();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [series, setSeries] = useState('');
   const [repetitions, setRepetitions] = useState('');
   const [muscleGroup, setMuscleGroup] = useState('');
   const [level, setLevel] = useState('');
-  const [weight, setWeight] = useState(''); // Nuevo campo para el peso
+  const [weight, setWeight] = useState('');
+  const [trainerId, setTrainerId] = useState('');
+  const [userType, setUserType] = useState('');
+  const [trainers, setTrainers] = useState([]);
+  
   const { id } = useParams();
   const navigate = useNavigate();
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchExercise = async () => {
@@ -32,14 +37,39 @@ export default function EditExercise() {
         setRepetitions(data.repetitions);
         setMuscleGroup(data.muscleGroup);
         setLevel(data.level);
-        setWeight(data.weight); // Obtener el valor del peso
+        setWeight(data.weight);
+        setTrainerId(data.trainerId || '');
       } else {
         alert('El ejercicio no existe.');
         navigate('/exercise-list');
       }
     };
 
+    const fetchUserData = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+          if (userData.userType === 'entrenador') {
+            setTrainerId(currentUser.uid); // Establece el ID del entrenador logueado
+          }
+        }
+      }
+    };
+
+    const fetchTrainers = async () => {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const trainerList = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(user => user.userType === 'entrenador');
+      setTrainers(trainerList);
+    };
+
     fetchExercise();
+    fetchUserData();
+    fetchTrainers();
   }, [id, navigate]);
 
   const handleSubmit = async (e) => {
@@ -54,7 +84,8 @@ export default function EditExercise() {
         repetitions: Number(repetitions), 
         muscleGroup,
         level,
-        weight, // Actualizar el valor del peso
+        weight,
+        trainerId, // Actualizar el ID del entrenador
       });
       alert('Ejercicio actualizado exitosamente');
       navigate('/exercise-list');
@@ -67,7 +98,7 @@ export default function EditExercise() {
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: theme.spacing(3), paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit}>
           <Typography variant="h4" component="h1" gutterBottom>
@@ -161,9 +192,29 @@ export default function EditExercise() {
             <MenuItem value="Moderado a Pesado">Moderado a Pesado</MenuItem>
             <MenuItem value="Pesado">Pesado</MenuItem>
           </TextField>
+
+          {userType === 'administrador' && (
+            <TextField
+              label="Entrenador"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              select
+              value={trainerId}
+              onChange={(e) => setTrainerId(e.target.value)}
+              required
+            >
+              {trainers.map(trainer => (
+                <MenuItem key={trainer.id} value={trainer.id}>
+                  {trainer.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
           <Box sx={{ marginTop: 3 }}>
-            <SubmitButton/>
-            <BackButton/>
+            <SubmitButton />
+            <BackButton />
           </Box>
         </Container>
       </main>

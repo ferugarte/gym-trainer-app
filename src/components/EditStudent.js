@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, Box, CssBaseline, useTheme } from '@mui/material';
+import { Container, TextField, Typography, Box, CssBaseline, useTheme, MenuItem } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
 import MenuBar from './MenuBar'; // Importa el MenuBar
 import BackButton from './BackButton';
 import SubmitButton from './SubmitButton';
@@ -27,11 +27,35 @@ export default function EditStudent() {
   const [renewalDate, setRenewalDate] = useState('');
   const [trainerNotes, setTrainerNotes] = useState('');
   const [goalsAndPreferences, setGoalsAndPreferences] = useState('');
+  const [trainerId, setTrainerId] = useState('');
+  const [userType, setUserType] = useState('');
+  const [trainers, setTrainers] = useState([]);
 
   const navigate = useNavigate();
   const theme = useTheme();
 
   useEffect(() => {
+    const fetchUserTypeAndTrainers = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+
+          if (userData.userType === 'entrenador') {
+            setTrainerId(user.uid);
+          } else if (userData.userType === 'administrador') {
+            const trainersSnapshot = await getDocs(collection(db, 'users'));
+            const trainersList = trainersSnapshot.docs
+              .filter((doc) => doc.data().userType === 'entrenador')
+              .map((doc) => ({ id: doc.id, ...doc.data() }));
+            setTrainers(trainersList);
+          }
+        }
+      }
+    };
+
     const fetchStudent = async () => {
       const docRef = doc(db, "students", id);
       const docSnap = await getDoc(docRef);
@@ -55,11 +79,13 @@ export default function EditStudent() {
         setRenewalDate(student.renewalDate || '');
         setTrainerNotes(student.trainerNotes || '');
         setGoalsAndPreferences(student.goalsAndPreferences || '');
+        setTrainerId(student.trainerId || '');
       } else {
         console.error("No such document!");
       }
     };
 
+    fetchUserTypeAndTrainers();
     fetchStudent();
   }, [id]);
 
@@ -87,6 +113,7 @@ export default function EditStudent() {
         renewalDate,
         trainerNotes,
         goalsAndPreferences,
+        trainerId,
       });
       alert('Alumno actualizado correctamente');
       navigate('/student-list');
@@ -94,10 +121,6 @@ export default function EditStudent() {
       console.error('Error al actualizar al alumno: ', error);
       alert('Hubo un error al actualizar el alumno.');
     }
-  };
-
-  const handleBackToList = () => {
-    navigate('/student-list');
   };
 
   return (
@@ -178,6 +201,37 @@ export default function EditStudent() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
+
+            {/* Selección de Entrenador */}
+            {userType === 'administrador' && (
+              <TextField
+                label="Entrenador"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                select
+                value={trainerId}
+                onChange={(e) => setTrainerId(e.target.value)}
+                required
+              >
+                {trainers.map(trainer => (
+                  <MenuItem key={trainer.id} value={trainer.id}>
+                    {trainer.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+
+            {userType === 'entrenador' && (
+              <TextField
+                label="Entrenador"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={auth.currentUser.displayName || 'Entrenador'}
+                disabled
+              />
+            )}
           </Box>
 
           {/* Datos de Salud */}
@@ -310,8 +364,8 @@ export default function EditStudent() {
           </Box>
 
           <Box sx={{ width: '100%', justifyContent: 'space-between', marginBottom: theme.spacing(3) }}>
-            <SubmitButton/>
-            <BackButton/>
+            <SubmitButton />
+            <BackButton />
           </Box>
         </Container>
       </main>

@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Typography, 
-  IconButton, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  Box 
-} from '@mui/material';
+import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import BackButton from './BackButton'; // Ajusta la ruta según la ubicación del componente
 import ListIcon from '@mui/icons-material/List'; 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
 import { CssBaseline } from '@mui/material';
 import MenuBar from './MenuBar'; // Importa el MenuBar
 
@@ -27,19 +15,45 @@ export default function StudentList() {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [nameFilter, setNameFilter] = useState('');
+  const [userType, setUserType] = useState(''); // Almacena el tipo de usuario logueado
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUserType = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setUserType(userDoc.data().userType);
+        }
+      }
+    };
+
     const fetchStudents = async () => {
       const querySnapshot = await getDocs(collection(db, 'students'));
-      const studentList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const studentList = await Promise.all(querySnapshot.docs.map(async (studentDoc) => {
+        const studentData = studentDoc.data();
+        let trainerName = '';
+
+        if (studentData.trainerId) {
+          const trainerDoc = await getDoc(doc(db, 'users', studentData.trainerId));
+          if (trainerDoc.exists()) {
+            trainerName = trainerDoc.data().name;
+          }
+        }
+
+        return {
+          id: studentDoc.id,
+          ...studentData,
+          trainerName,
+        };
       }));
+
       setStudents(studentList);
       setFilteredStudents(studentList);
     };
 
+    fetchUserType();
     fetchStudents();
   }, []);
 
@@ -79,7 +93,7 @@ export default function StudentList() {
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
@@ -92,6 +106,7 @@ export default function StudentList() {
                 <TableRow>
                   <TableCell>Nombre</TableCell>
                   <TableCell>Cédula</TableCell>
+                  {userType === 'administrador' && <TableCell>Entrenador</TableCell>}
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -100,6 +115,7 @@ export default function StudentList() {
                   <TableRow key={student.id}>
                     <TableCell>{student.name}</TableCell>
                     <TableCell>{student.idNumber}</TableCell>
+                    {userType === 'administrador' && <TableCell>{student.trainerName}</TableCell>}
                     <TableCell>
                       <IconButton color="primary" onClick={() => handleEdit(student.id)}>
                         <EditIcon />
@@ -118,8 +134,8 @@ export default function StudentList() {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
-            <BackButton />
+          </TableContainer>    
+          <BackButton />
         </Container>
       </main>
     </div>

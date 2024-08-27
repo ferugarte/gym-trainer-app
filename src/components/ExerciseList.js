@@ -1,49 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, IconButton, Table, TableBody, TableCell, useTheme, TableContainer, TableHead, TableRow, Paper, Box, TextField, MenuItem, Button } from '@mui/material';
+import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, TextField, MenuItem } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CssBaseline } from '@mui/material';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { collection, getDocs, getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
-import MenuBar from './MenuBar'; // Importa el MenuBar
+import MenuBar from './MenuBar';
 import BackButton from './BackButton';
 import AddDataButton from './AddDataButton';
+import { useTheme } from '@mui/material/styles'; 
 
 export default function ExerciseList() {
+  const theme = useTheme();
   const [exercises, setExercises] = useState([]);
   const [filteredExercises, setFilteredExercises] = useState([]);
   const [nameFilter, setNameFilter] = useState('');
   const [muscleGroupFilter, setMuscleGroupFilter] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
+  const [userType, setUserType] = useState('');
+  const [trainerId, setTrainerId] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme();
 
   useEffect(() => {
-    const fetchExercises = async () => {
-      const querySnapshot = await getDocs(collection(db, 'exercises'));
-      const exerciseList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setExercises(exerciseList);
-      setFilteredExercises(exerciseList);
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+          setTrainerId(user.uid);
+        }
+      }
     };
 
+    const fetchExercises = async () => {
+      const querySnapshot = await getDocs(collection(db, 'exercises'));
+      const exerciseList = await Promise.all(querySnapshot.docs.map(async (exerciseDoc) => {
+        const exerciseData = exerciseDoc.data();
+        let trainerName = 'N/A';
+
+        if (exerciseData.trainerId) {
+          const trainerDoc = await getDoc(doc(db, 'users', exerciseData.trainerId));
+          if (trainerDoc.exists()) {
+            trainerName = trainerDoc.data().name;
+          }
+        }
+
+        return {
+          id: exerciseDoc.id,
+          ...exerciseData,
+          trainerName
+        };
+      }));
+      setExercises(exerciseList);
+      filterExercises(exerciseList, nameFilter, muscleGroupFilter, levelFilter, userType, trainerId);
+    };
+
+    fetchUserData();
     fetchExercises();
-  }, []);
+  }, [nameFilter, muscleGroupFilter, levelFilter, userType, trainerId]);
 
-  useEffect(() => {
-    filterExercises();
-  }, [nameFilter, muscleGroupFilter, levelFilter]);
-
-  const filterExercises = () => {
-    const filtered = exercises.filter(exercise => {
-      return (
+  const filterExercises = (exerciseList, nameFilter, muscleGroupFilter, levelFilter, userType, trainerId) => {
+    const filtered = exerciseList.filter(exercise => {
+      const matchesFilters = 
         (nameFilter === '' || exercise.name.toLowerCase().includes(nameFilter.toLowerCase())) &&
         (muscleGroupFilter === '' || exercise.muscleGroup === muscleGroupFilter) &&
-        (levelFilter === '' || exercise.level === levelFilter)
-      );
+        (levelFilter === '' || exercise.level === levelFilter);
+      
+      const matchesTrainer = userType === 'administrador' || exercise.trainerId === trainerId;
+
+      return matchesFilters && matchesTrainer;
     });
     setFilteredExercises(filtered);
   };
@@ -54,22 +82,22 @@ export default function ExerciseList() {
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este ejercicio?")) {
-        try {
-            await deleteDoc(doc(db, 'exercises', id));
-            alert('Ejercicio eliminado exitosamente');
-            setExercises(exercises.filter(exercise => exercise.id !== id));
-            filterExercises();
-        } catch (error) {
-            console.error("Error al eliminar el ejercicio: ", error);
-            alert('Hubo un error al eliminar el ejercicio.');
-        }
+      try {
+        await deleteDoc(doc(db, 'exercises', id));
+        alert('Ejercicio eliminado exitosamente');
+        setExercises(exercises.filter(exercise => exercise.id !== id));
+        filterExercises(exercises, nameFilter, muscleGroupFilter, levelFilter, userType, trainerId);
+      } catch (error) {
+        console.error("Error al eliminar el ejercicio: ", error);
+        alert('Hubo un error al eliminar el ejercicio.');
+      }
     }
   };
 
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container>
           <Typography variant="h4" component="h1" gutterBottom>
@@ -94,14 +122,7 @@ export default function ExerciseList() {
               onChange={(e) => setMuscleGroupFilter(e.target.value)}
             >
               <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="Pecho">Pecho</MenuItem>
-              <MenuItem value="Espalda">Espalda</MenuItem>
-              <MenuItem value="Brazos">Brazos</MenuItem>
-              <MenuItem value="Hombros">Hombros</MenuItem>
-              <MenuItem value="Abdomen">Abdomen</MenuItem>
-              <MenuItem value="Piernas">Piernas</MenuItem>
-              <MenuItem value="Glúteos">Glúteos</MenuItem>
-              <MenuItem value="Gemelos">Gemelos</MenuItem>
+              {/* Opciones de grupo muscular */}
             </TextField>
             <TextField
               label="Filtrar por Nivel"
@@ -112,11 +133,7 @@ export default function ExerciseList() {
               onChange={(e) => setLevelFilter(e.target.value)}
             >
               <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="principiante">Principiante</MenuItem>
-              <MenuItem value="basico">Básico</MenuItem>
-              <MenuItem value="intermedio">Intermedio</MenuItem>
-              <MenuItem value="avanzado">Avanzado</MenuItem>
-              <MenuItem value="profesional">Profesional</MenuItem>
+              {/* Opciones de nivel */}
             </TextField>
           </Box>
 
@@ -127,7 +144,8 @@ export default function ExerciseList() {
                   <TableCell>Nombre</TableCell>
                   <TableCell>Grupo Muscular</TableCell>
                   <TableCell>Nivel</TableCell>
-                  <TableCell>Peso</TableCell> {/* Nueva columna para el peso */}
+                  <TableCell>Peso</TableCell>
+                  {userType === 'administrador' && <TableCell>Entrenador</TableCell>} {/* Columna solo visible para administradores */}
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -137,7 +155,8 @@ export default function ExerciseList() {
                     <TableCell>{exercise.name}</TableCell>
                     <TableCell>{exercise.muscleGroup}</TableCell>
                     <TableCell>{exercise.level}</TableCell>
-                    <TableCell>{exercise.weight}</TableCell> {/* Mostrar el peso */}
+                    <TableCell>{exercise.weight}</TableCell>
+                    {userType === 'administrador' && <TableCell>{exercise.trainerName}</TableCell>}
                     <TableCell>
                       <IconButton color="primary" onClick={() => handleEdit(exercise.id)}>
                         <EditIcon />
@@ -151,7 +170,7 @@ export default function ExerciseList() {
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Botón de Agregar Ejercicio */}
+          
           <Box sx={{ width: '100%', justifyContent: 'space-between', marginBottom: theme.spacing(3) }}>
             <AddDataButton label="Agregar Ejercicio" path="/add-exercise" />
             <BackButton/>

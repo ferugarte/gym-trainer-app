@@ -16,8 +16,10 @@ import RoutineSeriesByStudent from './components/RoutineSeriesByStudent';
 import RoutineSeriesList from './components/RoutineSeriesList';
 import { auth } from './firebaseConfig';
 import RoutineByDay from './components/RoutineByDay';
+import UserForm from './components/UserForm';
+import UserList from './components/UserList';
 
-function PrivateRoute({ element: Component, ...rest }) {
+function PrivateRoute({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,14 +29,14 @@ function PrivateRoute({ element: Component, ...rest }) {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
     return <div>Cargando...</div>; // Muestra un mensaje de carga mientras se verifica la autenticación
   }
 
-  return currentUser ? <Component {...rest} /> : <Navigate to="/login" />;
+  return currentUser ? children : <Navigate to="/login" />;
 }
 
 function App() {
@@ -42,19 +44,134 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<PrivateRoute element={Dashboard} />} />
-        <Route path="/students" element={<PrivateRoute element={StudentForm} />} />
-        <Route path="/student-list" element={<PrivateRoute element={StudentList} />} />
-        <Route path="/edit-student/:id" element={<PrivateRoute element={EditStudent} />} />
-        <Route path="/exercise-list" element={<PrivateRoute element={ExerciseList} />} />
-        <Route path="/add-exercise" element={<PrivateRoute element={AddExercise} />} />
-        <Route path="/routine-list" element={<PrivateRoute element={RoutineList} />} />
-        <Route path="/add-routine" element={<PrivateRoute element={AddRoutine} />} />
-        <Route path="/edit-exercise/:id" element={<PrivateRoute element={EditExercise} />} />
-        <Route path="/edit-routine/:id" element={<PrivateRoute element={EditRoutine} />} />
-        <Route path="/assign-routine-series/:studentId/:seriesId?" element={<PrivateRoute element={RoutineSeriesByStudent} />} />
-        <Route path="/routine-series-list/:studentId" element={<PrivateRoute element={RoutineSeriesList} />} />
-        <Route path="/routine-by-day/:studentId/:seriesId" element={<RoutineByDay />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/students" 
+          element={
+            <PrivateRoute>
+              <StudentForm />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/student-list" 
+          element={
+            <PrivateRoute>
+              <StudentList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/edit-student/:id" 
+          element={
+            <PrivateRoute>
+              <EditStudent />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/exercise-list" 
+          element={
+            <PrivateRoute>
+              <ExerciseList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/add-exercise" 
+          element={
+            <PrivateRoute>
+              <AddExercise />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/routine-list" 
+          element={
+            <PrivateRoute>
+              <RoutineList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/add-routine" 
+          element={
+            <PrivateRoute>
+              <AddRoutine />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/edit-exercise/:id" 
+          element={
+            <PrivateRoute>
+              <EditExercise />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/edit-routine/:id" 
+          element={
+            <PrivateRoute>
+              <EditRoutine />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/assign-routine-series/:studentId/:seriesId?" 
+          element={
+            <PrivateRoute>
+              <RoutineSeriesByStudent />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/routine-series-list/:studentId" 
+          element={
+            <PrivateRoute>
+              <RoutineSeriesList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/routine-by-day/:studentId/:seriesId" 
+          element={
+            <PrivateRoute>
+              <RoutineByDay />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/add-user" 
+          element={
+            <PrivateRoute>
+              <UserForm />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/user-list" 
+          element={
+            <PrivateRoute>
+              <UserList />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/edit-user/:userId" 
+          element={
+            <PrivateRoute>
+              <UserForm />
+            </PrivateRoute>
+          } 
+        />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>

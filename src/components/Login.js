@@ -1,9 +1,10 @@
-// src/components/Login.js
 import React, { useState } from 'react';
 import { Button, TextField, Container, Typography } from '@mui/material';
 import { auth, googleProvider } from '../firebaseConfig';
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from '../firebaseConfig';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard'); // Navegar a la pantalla principal después del login
+      navigate('/dashboard'); // Redirige a la pantalla principal después del inicio de sesión
     } catch (error) {
       setError("Login failed. Please check your credentials.");
       console.error('Error en el login:', error);
