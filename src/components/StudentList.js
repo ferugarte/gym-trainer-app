@@ -1,25 +1,33 @@
-// src/components/StudentList.js
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Toolbar } from '@mui/material';
-import { AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { 
+  Container, 
+  Typography, 
+  IconButton, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper, 
+  Box 
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import ListIcon from '@mui/icons-material/List'; // Importación para el ícono de lista
-import AddIcon from '@mui/icons-material/Add'; // Importación para el ícono de agregar
-import { Link, useNavigate } from 'react-router-dom';
+import BackButton from './BackButton'; // Ajusta la ruta según la ubicación del componente
+import ListIcon from '@mui/icons-material/List'; 
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { collection, getDocs } from 'firebase/firestore';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { Link, useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { CssBaseline } from '@mui/material';
+import MenuBar from './MenuBar'; // Importa el MenuBar
 
 export default function StudentList() {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [nameFilter, setNameFilter] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -43,27 +51,22 @@ export default function StudentList() {
     );
   }, [nameFilter, students]);
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
   const handleEdit = (id) => {
     navigate(`/edit-student/${id}`);
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este alumno?")) {
-        try {
-            await deleteDoc(doc(db, 'students', id));
-            alert('Alumno eliminado exitosamente');
-            // Opcional: Actualizar la lista de alumnos para reflejar los cambios
-            setStudents(students.filter(student => student.id !== id));
-        } catch (error) {
-            console.error("Error al eliminar el alumno: ", error);
-            alert('Hubo un error al eliminar al alumno.');
-        }
+      try {
+        await deleteDoc(doc(db, 'students', id));
+        alert('Alumno eliminado exitosamente');
+        setStudents(students.filter(student => student.id !== id));
+      } catch (error) {
+        console.error("Error al eliminar el alumno: ", error);
+        alert('Hubo un error al eliminar al alumno.');
+      }
     }
-};
+  };
 
   const handleAddRoutineSeries = (studentId) => {
     navigate(`/assign-routine-series/${studentId}`);
@@ -73,65 +76,11 @@ export default function StudentList() {
     navigate(`/routine-series-list/${studentId}`);
   };
 
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Lista de Alumnos
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
             Lista de Alumnos
@@ -143,7 +92,6 @@ export default function StudentList() {
                 <TableRow>
                   <TableCell>Nombre</TableCell>
                   <TableCell>Cédula</TableCell>
-                  <TableCell>Teléfono</TableCell>
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -151,8 +99,7 @@ export default function StudentList() {
                 {filteredStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>{student.name}</TableCell>
-                    <TableCell>{student.cedula}</TableCell>
-                    <TableCell>{student.phone}</TableCell>
+                    <TableCell>{student.idNumber}</TableCell>
                     <TableCell>
                       <IconButton color="primary" onClick={() => handleEdit(student.id)}>
                         <EditIcon />
@@ -161,10 +108,10 @@ export default function StudentList() {
                         <AddIcon />
                       </IconButton>
                       <IconButton color="primary" onClick={() => handleViewRoutineSeries(student.id)}>
-                        <ListIcon /> {/* Botón para ver la lista de series de rutinas */}
+                        <ListIcon />
                       </IconButton>
                       <IconButton color="secondary" onClick={() => handleDelete(student.id)}>
-                          <DeleteIcon />
+                        <DeleteIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -172,6 +119,7 @@ export default function StudentList() {
               </TableBody>
             </Table>
           </TableContainer>
+            <BackButton />
         </Container>
       </main>
     </div>

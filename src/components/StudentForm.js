@@ -1,11 +1,9 @@
-// src/components/StudentForm.js
 import React, { useState } from 'react';
 import { 
   Container, 
   TextField, 
   Button, 
   Typography, 
-  Toolbar, 
   Box, 
   CircularProgress,
   Snackbar,
@@ -13,9 +11,11 @@ import {
 } from '@mui/material';
 import { db, auth } from '../firebaseConfig';
 import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { AppBar, IconButton, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { useNavigate, Link } from 'react-router-dom';
+import BackButton from './BackButton'; // Ajusta la ruta según la ubicación del componente
+import { useNavigate } from 'react-router-dom';
+import { CssBaseline } from '@mui/material';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import SubmitButton from './SubmitButton';
 
 export default function StudentForm() {
   const [name, setName] = useState('');
@@ -43,10 +43,6 @@ export default function StudentForm() {
   const [snackbarSeverity, setSnackbarSeverity] = useState('success'); // Estado para el tipo de mensaje (éxito o error)
 
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -82,7 +78,6 @@ export default function StudentForm() {
       setIsLoading(false);
       navigate('/student-list');
     } catch (error) {
-        console.error('Error al registrar al alumno: ', error);
       console.error('Error al registrar al alumno: ', error);
       setSnackbarMessage('Hubo un error al registrar el alumno.');
       setSnackbarSeverity('error');
@@ -95,84 +90,18 @@ export default function StudentForm() {
     setOpenSnackbar(false);
   };
 
-  const handleLogout = () => {
-    auth.signOut();
-    navigate('/login');
-  };
-
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-        <ListItem button onClick={handleLogout}>
-          <ListItemText primary="Logout" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Registrar Alumno
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Registrar Alumno
           </Typography>
 
           {/* Datos Personales */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Datos Personales</Typography>
             <TextField
               label="Nombre y Apellido"
@@ -242,7 +171,7 @@ export default function StudentForm() {
           </Box>
 
           {/* Datos de Salud */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Datos de Salud</Typography>
             <TextField
               label="Estatura (cm)"
@@ -273,7 +202,7 @@ export default function StudentForm() {
           </Box>
 
           {/* Objetivos y Preferencias */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Objetivos y Preferencias</Typography>
             <TextField
               label="Objetivos y Preferencias"
@@ -288,7 +217,7 @@ export default function StudentForm() {
           </Box>
 
           {/* Historial de Entrenamiento */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Historial de Entrenamiento</Typography>
             <TextField
               label="Fecha de Inicio"
@@ -323,7 +252,7 @@ export default function StudentForm() {
           </Box>
 
           {/* Datos de Pago */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Datos de Pago</Typography>
             <TextField
               label="Método de Pago Preferido"
@@ -356,7 +285,7 @@ export default function StudentForm() {
           </Box>
 
           {/* Notas Adicionales */}
-          <Box sx={{ width: '100%', marginBottom: theme.spacing(3) }}>
+          <Box sx={{ width: '100%', marginBottom: '24px' }}>
             <Typography variant="h6" gutterBottom>Notas Adicionales</Typography>
             <TextField
               label="Notas del Entrenador"
@@ -371,15 +300,7 @@ export default function StudentForm() {
           </Box>
 
           <Box sx={{ position: 'relative', width: '100%' }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              type="submit" 
-              fullWidth 
-              disabled={isLoading} // Desactivar el botón mientras se carga
-            >
-              Registrar
-            </Button>
+            <SubmitButton label='Registrar'/>
             {isLoading && (
               <CircularProgress 
                 size={24} 
@@ -392,6 +313,7 @@ export default function StudentForm() {
                 }} 
               />
             )}
+            <BackButton/>
           </Box>
 
           {/* Snackbar para mostrar mensajes de éxito o error */}

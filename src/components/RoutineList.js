@@ -1,23 +1,20 @@
-// src/components/RoutineList.js
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Toolbar, Box } from '@mui/material';
-import { AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Container, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
-import { doc, deleteDoc } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Link, useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import { CssBaseline } from '@mui/material';
+import BackButton from './BackButton';
+import AddDataButton from './AddDataButton';
 
 export default function RoutineList() {
   const [routines, setRoutines] = useState([]);
   const [filteredRoutines, setFilteredRoutines] = useState([]);
   const [nameFilter, setNameFilter] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchRoutines = async () => {
@@ -41,10 +38,6 @@ export default function RoutineList() {
     );
   }, [nameFilter, routines]);
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
   const handleDeleteRoutine = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta rutina?")) {
         try {
@@ -57,72 +50,17 @@ export default function RoutineList() {
             alert('Hubo un error al eliminar la rutina.');
         }
     }
-};
-
+  };
 
   const handleEdit = (id) => {
     navigate(`/edit-routine/${id}`);
   };
 
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Lista de Rutinas
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
             Lista de Rutinas
@@ -162,10 +100,9 @@ export default function RoutineList() {
               </TableBody>
             </Table>
           </TableContainer>
-          <Box sx={{ marginTop: theme.spacing(3) }}>
-            <Button variant="contained" color="primary" onClick={() => navigate('/add-routine')}>
-              Agregar Rutina
-            </Button>
+          <Box sx={{ marginTop: 3, justifyContent: 'center' }}>
+            <AddDataButton label="Agregar Rutina" path="/add-routine" />
+            <BackButton />
           </Box>
         </Container>
       </main>

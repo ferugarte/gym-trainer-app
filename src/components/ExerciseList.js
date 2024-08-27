@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Toolbar, AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery, Button, Box, TextField, MenuItem } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Container, Typography, IconButton, Table, TableBody, TableCell, useTheme, TableContainer, TableHead, TableRow, Paper, Box, TextField, MenuItem, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { CssBaseline } from '@mui/material';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import BackButton from './BackButton';
+import AddDataButton from './AddDataButton';
 
 export default function ExerciseList() {
   const [exercises, setExercises] = useState([]);
@@ -15,8 +18,6 @@ export default function ExerciseList() {
   const [levelFilter, setLevelFilter] = useState('');
   const navigate = useNavigate();
   const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -65,67 +66,11 @@ export default function ExerciseList() {
     }
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <MenuIcon 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          />
-          <Typography variant="h6" noWrap>
-            Lista de Ejercicios
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container>
           <Typography variant="h4" component="h1" gutterBottom>
             Lista de Ejercicios
@@ -207,10 +152,9 @@ export default function ExerciseList() {
             </Table>
           </TableContainer>
           {/* Botón de Agregar Ejercicio */}
-          <Box sx={{ marginTop: 3, display: 'flex', justifyContent: 'center' }}>
-            <Button variant="contained" color="primary" onClick={() => navigate('/add-exercise')}>
-              Agregar Ejercicio
-            </Button>
+          <Box sx={{ width: '100%', justifyContent: 'space-between', marginBottom: theme.spacing(3) }}>
+            <AddDataButton label="Agregar Ejercicio" path="/add-exercise" />
+            <BackButton/>
           </Box>
         </Container>
       </main>

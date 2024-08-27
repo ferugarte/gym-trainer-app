@@ -1,9 +1,12 @@
+// src/components/AddExercise.js
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, MenuItem, Box, Toolbar, AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { useNavigate, Link } from 'react-router-dom';
+import { Container, TextField, Button, Typography, MenuItem, Box } from '@mui/material';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import { useNavigate } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import BackButton from './BackButton';
+import SubmitButton from './SubmitButton';
 
 export default function AddExercise() {
   const [name, setName] = useState('');
@@ -14,9 +17,6 @@ export default function AddExercise() {
   const [level, setLevel] = useState('');
   const [weight, setWeight] = useState(''); // Nuevo campo para el peso
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,67 +39,10 @@ export default function AddExercise() {
     }
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <MenuIcon 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          />
-          <Typography variant="h6" noWrap>
-            Registrar Ejercicio
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar />
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit}>
           <Typography variant="h4" component="h1" gutterBottom>
             Registrar Ejercicio
@@ -193,9 +136,8 @@ export default function AddExercise() {
             <MenuItem value="Pesado">Pesado</MenuItem>
           </TextField>
           <Box sx={{ marginTop: 3 }}>
-            <Button variant="contained" color="primary" type="submit" fullWidth>
-              Registrar
-            </Button>
+            <SubmitButton label="Agregar Ejercicio"/>
+            <BackButton/>
           </Box>
         </Container>
       </main>

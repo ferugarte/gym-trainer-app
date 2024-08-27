@@ -1,11 +1,13 @@
 // src/components/AddRoutine.js
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, Toolbar, Box, Checkbox, IconButton, FormControlLabel, FormGroup, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import { AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { Link, useNavigate } from 'react-router-dom';
+import { Container, TextField, Button, Typography, Box, Checkbox, FormControlLabel, FormGroup, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
+import { useNavigate } from 'react-router-dom';
 import { addDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import BackButton from './BackButton';
+import SubmitButton from './SubmitButton';
 
 export default function AddRoutine() {
   const [name, setName] = useState('');
@@ -15,9 +17,6 @@ export default function AddRoutine() {
   const [muscleGroupFilter, setMuscleGroupFilter] = useState('');
   const [genderFilter, setGenderFilter] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -75,69 +74,11 @@ export default function AddRoutine() {
     }
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Agregar Rutina
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Agregar Rutina
@@ -211,10 +152,9 @@ export default function AddRoutine() {
             ))}
           </FormGroup>
 
-          <Box sx={{ marginTop: theme.spacing(3) }}>
-            <Button variant="contained" color="primary" type="submit" fullWidth>
-              Agregar Rutina
-            </Button>
+          <Box sx={{ marginTop: 3 }}>
+            <SubmitButton label="Agregar Rutina" />
+            <BackButton/>
           </Box>
         </Container>
       </main>

@@ -1,20 +1,18 @@
-// src/components/Dashboard.js
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, List, ListItem, ListItemText } from '@mui/material';
-import { AppBar, Toolbar, Drawer, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
+import { Container, Typography, Grid, Paper, CssBaseline, AppBar, Toolbar, Drawer, useTheme, useMediaQuery, List, ListItem, ListItemText } from '@mui/material'; // Asegúrate de importar List, ListItem y ListItemText
 import MenuIcon from '@mui/icons-material/Menu';
-import { Link } from 'react-router-dom';
-import { collection, getDocs, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
+import MenuBar from './MenuBar'; // Importa MenuBar.js
 
 Chart.register(...registerables);
 
 export default function Dashboard() {
   const [latestStudents, setLatestStudents] = useState([]);
   const [upcomingSeries, setUpcomingSeries] = useState([]);
-  const theme = useTheme();
+  const theme = useTheme(); 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -25,69 +23,14 @@ export default function Dashboard() {
       const students = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        registrationDate: doc.data().registrationDate.toDate().toLocaleDateString('es-ES'), // Formatear la fecha
+        registrationDate: doc.data().registrationDate.toDate().toLocaleDateString('es-ES'),
       }));
-      console.log("Últimos alumnos inscriptos: ", students); // Log para depuración
       setLatestStudents(students);
     };
 
     const fetchUpcomingSeries = async () => {
-        try {
-            const series = [];
-            const studentsSnapshot = await getDocs(collection(db, 'students'));
-            
-            for (const studentDoc of studentsSnapshot.docs) {
-                const studentData = studentDoc.data();
-                console.log("Estudiante ID: ", studentDoc.id); // Verificar que estamos accediendo correctamente a los estudiantes
-    
-                // Acceder a la subcolección de series de rutinas usando el studentId
-                const routineSeriesRef = collection(db, `students/${studentDoc.id}/routineSeries`);
-                
-                // Asegurarse de que la referencia tiene documentos antes de hacer la consulta
-                const seriesSnapshot = await getDocs(routineSeriesRef);
-    
-                if (!seriesSnapshot.empty) {
-                    seriesSnapshot.forEach((doc) => {
-                        let endDate;
-                        
-                        // Verificar el tipo de dato de endDate
-                        if (doc.data().endDate instanceof Timestamp) {
-                            endDate = doc.data().endDate.toDate();
-                        } else if (typeof doc.data().endDate === 'string' || typeof doc.data().endDate === 'number') {
-                            endDate = new Date(doc.data().endDate);
-                        } else {
-                            console.error('Tipo de dato desconocido para endDate:', doc.data().endDate);
-                            return;
-                        }
-    
-                        const today = new Date();
-                        
-                        // Filtrar por las que aún no han vencido
-                        if (endDate >= today) {
-                            console.log("Serie de rutina obtenida: ", doc.data());
-                            series.push({
-                                id: doc.id,
-                                ...doc.data(),
-                                endDate: endDate.toLocaleDateString('es-ES'),
-                                studentName: studentData.name, // Nombre del alumno
-                                studentCedula: studentData.idNumber, // Cédula del alumno
-                                studentId: studentDoc.id, // Para referencia adicional
-                            });
-                        }
-                    });
-                } else {
-                    console.log(`No se encontraron series de rutinas para el estudiante ID: ${studentDoc.id}`);
-                }
-            }
-    
-            series.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
-            console.log("Series de rutinas ordenadas: ", series);
-            setUpcomingSeries(series.slice(0, 5)); // Limitar a las próximas 5 series
-        } catch (error) {
-            console.error("Error al obtener las series de rutinas: ", error);
-        }
+      // Lógica para obtener las próximas series de rutinas
     };
-        
 
     fetchLatestStudents();
     fetchUpcomingSeries();
@@ -96,26 +39,6 @@ export default function Dashboard() {
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
   };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
 
   const chartData = {
     labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
@@ -138,35 +61,7 @@ export default function Dashboard() {
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <MenuIcon 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          />
-          <Typography variant="h6" noWrap>
-            Dashboard
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
       <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
         <Toolbar />
         <Container maxWidth="lg">
@@ -190,19 +85,19 @@ export default function Dashboard() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
-                <Paper elevation={3} sx={{ padding: theme.spacing(2) }}>
-                    <Typography variant="h6">Próximas 5 Series de Rutinas a Vencer</Typography>
-                    <List>
-                        {upcomingSeries.map((series) => (
-                            <ListItem key={series.id}>
-                                <ListItemText
-                                    primary={`${series.studentName} (${series.studentCedula}) - ${series.name}`}
-                                    secondary={`Vencimiento: ${series.endDate}`}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                </Paper>
+              <Paper elevation={3} sx={{ padding: theme.spacing(2) }}>
+                <Typography variant="h6">Próximas 5 Series de Rutinas a Vencer</Typography>
+                <List>
+                  {upcomingSeries.map((series) => (
+                    <ListItem key={series.id}>
+                      <ListItemText
+                        primary={`${series.studentName} (${series.studentCedula}) - ${series.name}`}
+                        secondary={`Vencimiento: ${series.endDate}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
               <Paper elevation={3} sx={{ padding: theme.spacing(2) }}>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, MenuItem, Box, Toolbar, AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Container, TextField, Button, Typography, MenuItem, Box, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import BackButton from './BackButton';
+import SubmitButton from './SubmitButton';
 
 export default function EditExercise() {
   const [name, setName] = useState('');
@@ -16,8 +18,6 @@ export default function EditExercise() {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchExercise = async () => {
@@ -64,67 +64,11 @@ export default function EditExercise() {
     }
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <MenuIcon 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          />
-          <Typography variant="h6" noWrap>
-            Editar Ejercicio
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: theme.spacing(3), paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit}>
           <Typography variant="h4" component="h1" gutterBottom>
             Editar Ejercicio
@@ -218,9 +162,8 @@ export default function EditExercise() {
             <MenuItem value="Pesado">Pesado</MenuItem>
           </TextField>
           <Box sx={{ marginTop: 3 }}>
-            <Button variant="contained" color="primary" type="submit" fullWidth>
-              Actualizar
-            </Button>
+            <SubmitButton/>
+            <BackButton/>
           </Box>
         </Container>
       </main>

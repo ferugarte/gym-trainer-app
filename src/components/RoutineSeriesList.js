@@ -1,22 +1,18 @@
-// src/components/RoutineSeriesList.js
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Toolbar, Box, Button } from '@mui/material';
-import { AppBar, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { useParams, useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import MenuBar from './MenuBar'; // Importa el MenuBar
+import { CssBaseline } from '@mui/material';
+import BackButton from './BackButton';
 
 export default function RoutineSeriesList() {
   const { studentId } = useParams(); // Obtener el ID del alumno desde la URL
   const [studentData, setStudentData] = useState({});
   const [routineSeries, setRoutineSeries] = useState([]);
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchRoutineSeries = async () => {
@@ -53,74 +49,15 @@ export default function RoutineSeriesList() {
     navigate('/student-list');
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        <ListItem button component={Link} to="/dashboard">
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-        <ListItem button component={Link} to="/students">
-          <ListItemText primary="Registrar Alumno" />
-        </ListItem>
-        <ListItem button component={Link} to="/student-list">
-          <ListItemText primary="Lista de Alumnos" />
-        </ListItem>
-        <ListItem button component={Link} to="/exercise-list">
-          <ListItemText primary="Lista de Ejercicios" />
-        </ListItem>
-        <ListItem button component={Link} to="/routine-list">
-          <ListItemText primary="Lista de Rutinas" />
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton 
-            color="inherit" 
-            aria-label="open drawer" 
-            edge="start" 
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap>
-            Series de Rutinas de Alumno
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        ModalProps={{
-          keepMounted: true, // Mejora el rendimiento en dispositivos móviles
-        }}
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      <main style={{ flexGrow: 1, padding: theme.spacing(3), marginLeft: isLargeScreen ? 0 : 0 }}>
-        <Toolbar />
+      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
             Series de Rutinas para {studentData.name} ({studentData.idNumber})
           </Typography>
-
 
           <TableContainer component={Paper}>
             <Table>
@@ -146,10 +83,8 @@ export default function RoutineSeriesList() {
               </TableBody>
             </Table>
           </TableContainer>
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: theme.spacing(3) }}>
-            <Button variant="outlined" color="secondary" onClick={handleBackToList}>
-              Volver a la lista
-            </Button>
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+            <BackButton/>
           </Box>
         </Container>
       </main>
