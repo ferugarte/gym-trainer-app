@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Box } from '@mui/material';
+import { Container, Typography, TextField, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import MenuBar from './MenuBar'; // Importa el MenuBar
+import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import MenuBar from './MenuBar';
 import { CssBaseline } from '@mui/material';
 import BackButton from './BackButton';
 import AddDataButton from './AddDataButton';
@@ -14,41 +14,70 @@ export default function RoutineList() {
   const [routines, setRoutines] = useState([]);
   const [filteredRoutines, setFilteredRoutines] = useState([]);
   const [nameFilter, setNameFilter] = useState('');
+  const [userType, setUserType] = useState('');
+  const [trainerId, setTrainerId] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRoutines = async () => {
-      const querySnapshot = await getDocs(collection(db, 'routines'));
-      const routineList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setRoutines(routineList);
-      setFilteredRoutines(routineList);
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+          setTrainerId(user.uid);
+        }
+      }
     };
 
-    fetchRoutines();
-  }, []);
+    const fetchRoutines = async () => {
+      const querySnapshot = await getDocs(collection(db, 'routines'));
+      const routineList = await Promise.all(
+        querySnapshot.docs.map(async routineDoc => {
+          const data = routineDoc.data();
+          let trainerName = 'N/A';
+          if (data.trainerId) {
+            const trainerDoc = await getDoc(doc(db, 'users', data.trainerId));
+            if (trainerDoc.exists()) {
+              trainerName = trainerDoc.data().name;
+            }
+          }
+          return {
+            id: routineDoc.id,
+            ...data,
+            trainerName
+          };
+        })
+      );
+      setRoutines(routineList);
+      filterRoutines(routineList, nameFilter, userType, trainerId);
+    };
 
-  useEffect(() => {
-    setFilteredRoutines(
-      routines.filter(routine =>
-        (routine.name?.toLowerCase() || '').includes(nameFilter.toLowerCase())
-      )
-    );
-  }, [nameFilter, routines]);
+    fetchUserData();
+    fetchRoutines();
+  }, [nameFilter, userType, trainerId]);
+
+  const filterRoutines = (routineList, nameFilter, userType, trainerId) => {
+    const filtered = routineList.filter(routine => {
+      const matchesName = (routine.name?.toLowerCase() || '').includes(nameFilter.toLowerCase());
+      const matchesTrainer = userType === 'administrador' || routine.trainerId === trainerId;
+      return matchesName && matchesTrainer;
+    });
+    setFilteredRoutines(filtered);
+  };
 
   const handleDeleteRoutine = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta rutina?")) {
-        try {
-            await deleteDoc(doc(db, 'routines', id));
-            alert('Rutina eliminada exitosamente');
-            // Opcional: Actualizar la lista de rutinas para reflejar los cambios
-            setRoutines(routines.filter(routine => routine.id !== id));
-        } catch (error) {
-            console.error("Error al eliminar la rutina: ", error);
-            alert('Hubo un error al eliminar la rutina.');
-        }
+      try {
+        await deleteDoc(doc(db, 'routines', id));
+        alert('Rutina eliminada exitosamente');
+        setRoutines(routines.filter(routine => routine.id !== id));
+        filterRoutines(routines, nameFilter, userType, trainerId);
+      } catch (error) {
+        console.error("Error al eliminar la rutina: ", error);
+        alert('Hubo un error al eliminar la rutina.');
+      }
     }
   };
 
@@ -59,7 +88,7 @@ export default function RoutineList() {
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
@@ -80,6 +109,7 @@ export default function RoutineList() {
               <TableHead>
                 <TableRow>
                   <TableCell>Nombre</TableCell>
+                  {userType === 'administrador' && <TableCell>Entrenador</TableCell>} {/* Columna solo visible para administradores */}
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -87,6 +117,7 @@ export default function RoutineList() {
                 {filteredRoutines.map((routine) => (
                   <TableRow key={routine.id}>
                     <TableCell>{routine.name}</TableCell>
+                    {userType === 'administrador' && <TableCell>{routine.trainerName}</TableCell>}
                     <TableCell>
                       <IconButton color="primary" onClick={() => handleEdit(routine.id)}>
                         <EditIcon />

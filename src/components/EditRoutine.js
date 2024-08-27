@@ -1,11 +1,10 @@
-// src/components/EditRoutine.js
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, Box, Checkbox, FormControlLabel, FormGroup, Select, MenuItem, InputLabel, FormControl, CssBaseline } from '@mui/material';
+import { Container, TextField, Typography, Box, Checkbox, FormControlLabel, FormGroup, Select, MenuItem, InputLabel, FormControl, CssBaseline } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import MenuBar from './MenuBar'; // Importa el MenuBar
+import { db, auth } from '../firebaseConfig';
+import MenuBar from './MenuBar';
 import BackButton from './BackButton';
 import SubmitButton from './SubmitButton';
 
@@ -17,10 +16,25 @@ export default function EditRoutine() {
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [muscleGroupFilter, setMuscleGroupFilter] = useState('');
   const [genderFilter, setGenderFilter] = useState('');
+  const [userType, setUserType] = useState('');
+  const [trainerId, setTrainerId] = useState('');
+  const [trainers, setTrainers] = useState([]); // Lista de entrenadores para admin
   const navigate = useNavigate();
   const theme = useTheme();
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+          setTrainerId(user.uid);
+        }
+      }
+    };
+
     const fetchRoutine = async () => {
       const docRef = doc(db, "routines", id);
       const docSnap = await getDoc(docRef);
@@ -28,8 +42,9 @@ export default function EditRoutine() {
         const routine = docSnap.data();
         setName(routine.name);
         setSelectedExercises(routine.exercises || []);
+        setTrainerId(routine.trainerId || '');
       } else {
-        console.error("No such document!");
+        console.error("No se encontró la rutina.");
       }
     };
 
@@ -40,30 +55,46 @@ export default function EditRoutine() {
         ...doc.data()
       }));
       setExercises(exerciseList);
-      setFilteredExercises(exerciseList);
+      filterExercises(exerciseList);
     };
 
+    const fetchTrainers = async () => {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const trainerList = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(user => user.userType === 'entrenador');
+      setTrainers(trainerList);
+    };
+
+    fetchUserData();
     fetchRoutine();
     fetchExercises();
-  }, [id]);
+    if (userType === 'administrador') {
+      fetchTrainers();
+    }
+  }, [id, userType]);
 
   useEffect(() => {
-    const applyFilters = () => {
-      let filtered = exercises;
-
-      if (muscleGroupFilter) {
-        filtered = filtered.filter(exercise => exercise.muscleGroup === muscleGroupFilter);
-      }
-
-      if (genderFilter) {
-        filtered = filtered.filter(exercise => exercise.gender === genderFilter);
-      }
-
-      setFilteredExercises(filtered);
-    };
-
-    applyFilters();
+    filterExercises(exercises);
   }, [muscleGroupFilter, genderFilter, exercises]);
+
+  const filterExercises = (exerciseList) => {
+    let filtered = exerciseList;
+
+    if (muscleGroupFilter) {
+      filtered = filtered.filter(exercise => exercise.muscleGroup === muscleGroupFilter);
+    }
+
+    if (genderFilter) {
+      filtered = filtered.filter(exercise => exercise.gender === genderFilter);
+    }
+
+    if (userType !== 'administrador') {
+      filtered = filtered.filter(exercise => exercise.trainerId === trainerId);
+    }
+
+    setFilteredExercises(filtered);
+  };
 
   const handleExerciseToggle = (exerciseId) => {
     setSelectedExercises(prevSelected =>
@@ -81,6 +112,7 @@ export default function EditRoutine() {
       await updateDoc(routineRef, {
         name,
         exercises: selectedExercises,
+        trainerId, // Guardar el ID del entrenador
       });
       alert('Rutina actualizada correctamente');
       navigate('/routine-list');
@@ -93,7 +125,7 @@ export default function EditRoutine() {
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: theme.spacing(3), paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom>
@@ -109,6 +141,24 @@ export default function EditRoutine() {
             onChange={(e) => setName(e.target.value)}
             required
           />
+
+          {userType === 'administrador' && (
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="trainer-select-label">Entrenador</InputLabel>
+              <Select
+                labelId="trainer-select-label"
+                value={trainerId}
+                onChange={(e) => setTrainerId(e.target.value)}
+                label="Entrenador"
+              >
+                {trainers.map(trainer => (
+                  <MenuItem key={trainer.id} value={trainer.id}>
+                    {trainer.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <Typography variant="h6" component="h2" gutterBottom>
             Filtrar Ejercicios
@@ -162,7 +212,7 @@ export default function EditRoutine() {
                     name={exercise.name}
                   />
                 }
-                label={`${exercise.name} - ${exercise.description} (${exercise.sets} series, ${exercise.reps} reps)`}
+                label={`${exercise.name} - ${exercise.description} (${exercise.series} series, ${exercise.repetitions} reps)`}
                 key={exercise.id}
               />
             ))}

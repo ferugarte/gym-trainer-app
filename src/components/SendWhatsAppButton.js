@@ -6,7 +6,7 @@ import { db } from '../firebaseConfig';
 
 export default function SendWhatsAppButton({ seriesId, studentPhone }) {
 
-  const constructRoutineMessage = (exercises) => {
+  const constructRoutineMessage = (exercises) => {  
     if (!exercises || exercises.length === 0) {
       return 'No hay ejercicios asignados en esta serie de rutinas.';
     }
