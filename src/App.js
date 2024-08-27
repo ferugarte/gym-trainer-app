@@ -15,6 +15,7 @@ import EditExercise from './components/EditExercise';
 import RoutineSeriesByStudent from './components/RoutineSeriesByStudent';
 import RoutineSeriesList from './components/RoutineSeriesList';
 import { auth } from './firebaseConfig';
+import RoutineByDay from './components/RoutineByDay';
 
 function PrivateRoute({ element: Component, ...rest }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -53,6 +54,7 @@ function App() {
         <Route path="/edit-routine/:id" element={<PrivateRoute element={EditRoutine} />} />
         <Route path="/assign-routine-series/:studentId/:seriesId?" element={<PrivateRoute element={RoutineSeriesByStudent} />} />
         <Route path="/routine-series-list/:studentId" element={<PrivateRoute element={RoutineSeriesList} />} />
+        <Route path="/routine-by-day/:studentId/:seriesId" element={<RoutineByDay />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>

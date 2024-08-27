@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Button } from '@mui/material';
+import { Container, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import MenuBar from './MenuBar'; // Importa el MenuBar
+import MenuBar from './MenuBar';
 import { CssBaseline } from '@mui/material';
 import BackButton from './BackButton';
 
 export default function RoutineSeriesList() {
-  const { studentId } = useParams(); // Obtener el ID del alumno desde la URL
+  const { studentId } = useParams();
   const [studentData, setStudentData] = useState({});
   const [routineSeries, setRoutineSeries] = useState([]);
   const navigate = useNavigate();
@@ -45,18 +46,18 @@ export default function RoutineSeriesList() {
     navigate(`/assign-routine-series/${studentId}/${seriesId}`);
   };
 
-  const handleBackToList = () => {
-    navigate('/student-list');
+  const handleViewRoutineByDay = (seriesId) => {
+    navigate(`/routine-by-day/${studentId}/${seriesId}`);
   };
 
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
-      <MenuBar /> {/* Coloca el MenuBar aquí */}
+      <MenuBar />
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
-            Series de Rutinas para {studentData.name} ({studentData.idNumber})
+            Series de Rutinas para {studentData.name ? studentData.name : 'Cargando...'} ({studentData.idNumber ? studentData.idNumber : ''})
           </Typography>
 
           <TableContainer component={Paper}>
@@ -69,17 +70,28 @@ export default function RoutineSeriesList() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {routineSeries.map((series) => (
-                  <TableRow key={series.id}>
-                    <TableCell>{series.name}</TableCell>
-                    <TableCell>{series.endDate}</TableCell>
-                    <TableCell>
-                      <IconButton color="primary" onClick={() => handleEdit(series.id)}>
-                        <EditIcon />
-                      </IconButton>
+                {routineSeries.length > 0 ? (
+                  routineSeries.map((series) => (
+                    <TableRow key={series.id}>
+                      <TableCell>{series.name}</TableCell>
+                      <TableCell>{series.endDate}</TableCell>
+                      <TableCell>
+                        <IconButton color="primary" onClick={() => handleEdit(series.id)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton color="primary" onClick={() => handleViewRoutineByDay(series.id)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      No se encontraron series de rutinas.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
