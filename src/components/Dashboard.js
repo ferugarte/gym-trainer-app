@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
-import MenuBar from './MenuBar'; // Importa MenuBar.js
+import MenuBar from './common/MenuBar'; // Importa MenuBar.js
 
 Chart.register(...registerables);
 
