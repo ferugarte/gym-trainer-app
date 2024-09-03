@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Container, TextField, Typography, Box, MenuItem, CssBaseline } from '@mui/material';
+import { Container, TextField, Typography, Box, MenuItem, CssBaseline, FormControl, InputLabel, Select } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, addDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import MenuBar from '../common/MenuBar';
 import BackButton from '../common/BackButton';
 import SubmitButton from '../common/SubmitButton';
-import { useTheme } from '@mui/material/styles'; 
+import { useTheme } from '@mui/material/styles';
 
 export default function ExerciseForm() {
   const theme = useTheme();
@@ -14,11 +14,28 @@ export default function ExerciseForm() {
   const [description, setDescription] = useState('');
   const [muscleGroup, setMuscleGroup] = useState('');
   const [videoLink, setVideoLink] = useState(''); // Nuevo estado para el enlace del video
+  const [trainerId, setTrainerId] = useState(''); // Estado para el entrenador
+  const [trainers, setTrainers] = useState([]); // Estado para la lista de entrenadores
+  const [userType, setUserType] = useState(''); // Estado para el tipo de usuario
   const [isEditMode, setIsEditMode] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserType(userData.userType);
+          if (userData.userType === 'entrenador') {
+            setTrainerId(user.uid); // Si es entrenador, establecer su ID por defecto
+          }
+        }
+      }
+    };
+
     const fetchExercise = async () => {
       if (id) {
         setIsEditMode(true);
@@ -30,7 +47,8 @@ export default function ExerciseForm() {
           setName(data.name);
           setDescription(data.description);
           setMuscleGroup(data.muscleGroup);
-          setVideoLink(data.videoLink || ''); // Cargar el enlace del video si existe
+          setVideoLink(data.videoLink || '');
+          setTrainerId(data.trainerId || ''); // Cargar el ID del entrenador si existe
         } else {
           alert('El ejercicio no existe.');
           navigate('/exercise-list');
@@ -38,7 +56,17 @@ export default function ExerciseForm() {
       }
     };
 
+    const fetchTrainers = async () => {
+      const querySnapshot = await getDocs(collection(db, 'users'));
+      const trainerList = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(user => user.userType === 'entrenador');
+      setTrainers(trainerList);
+    };
+
+    fetchUserData();
     fetchExercise();
+    fetchTrainers();
   }, [id, navigate]);
 
   const handleSubmit = async (e) => {
@@ -48,7 +76,8 @@ export default function ExerciseForm() {
       name,
       description,
       muscleGroup,
-      videoLink, // Guardar el enlace del video
+      videoLink,
+      trainerId, // Guardar el ID del entrenador
     };
 
     try {
@@ -121,6 +150,36 @@ export default function ExerciseForm() {
             value={videoLink}
             onChange={(e) => setVideoLink(e.target.value)}
           />
+
+          {userType === 'administrador' ? (
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="trainer-select-label">Entrenador</InputLabel>
+              <Select
+                labelId="trainer-select-label"
+                value={trainerId}
+                onChange={(e) => setTrainerId(e.target.value)}
+                label="Entrenador"
+              >
+                {trainers.map(trainer => (
+                  <MenuItem key={trainer.id} value={trainer.id}>
+                    {trainer.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : (
+            <TextField
+              label="Entrenador"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={trainers.find(trainer => trainer.id === trainerId)?.name || ''}
+              InputProps={{
+                readOnly: true,
+              }}
+              disabled
+            />
+          )}
 
           <Box sx={{ marginTop: 3 }}>
             <SubmitButton label={isEditMode ? 'Actualizar Ejercicio' : 'Agregar Ejercicio'} />
