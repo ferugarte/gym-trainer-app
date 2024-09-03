@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemText, CssBaseline, useTheme, useMediaQuery, Button, Avatar, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
 const MenuBar = () => {
@@ -58,9 +58,6 @@ const MenuBar = () => {
       <ListItem button component={Link} to="/exercise-list">
         <ListItemText primary="Lista de Ejercicios" />
       </ListItem>
-      <ListItem button component={Link} to="/routine-list">
-        <ListItemText primary="Lista de Rutinas" />
-      </ListItem>
       <ListItem button component={Link} to="/user-list">
         <ListItemText primary="Lista de Usuarios" />
       </ListItem>
@@ -77,9 +74,6 @@ const MenuBar = () => {
       </ListItem>
       <ListItem button component={Link} to="/exercise-list">
         <ListItemText primary="Lista de Ejercicios" />
-      </ListItem>
-      <ListItem button component={Link} to="/routine-list">
-        <ListItemText primary="Lista de Rutinas" />
       </ListItem>
     </>
   );

@@ -3,12 +3,12 @@ import { Container, Typography, Table, TableBody, TableCell, TableContainer, Tab
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../../firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
-import MenuBar from './MenuBar'; // Importa el MenuBar
-import BackButton from './BackButton';
-import AddDataButton from './AddDataButton';
+import MenuBar from '../common/MenuBar'; // Importa el MenuBar
+import BackButton from '../common/BackButton';
+import AddDataButton from '../common/AddDataButton';
 
 export default function UserList() {
   const [users, setUsers] = useState([]);

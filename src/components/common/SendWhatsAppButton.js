@@ -2,7 +2,7 @@ import React from 'react';
 import { IconButton } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../../firebaseConfig';
 
 export default function SendWhatsAppButton({ seriesId, studentPhone }) {
 

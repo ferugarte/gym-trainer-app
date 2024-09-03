@@ -3,11 +3,11 @@ import { Container, TextField, MenuItem, Typography } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, auth } from '../firebaseConfig';
-import SubmitButton from './SubmitButton';
+import { db, auth } from '../../firebaseConfig';
+import SubmitButton from '../common/SubmitButton';
 import { CssBaseline } from '@mui/material';
-import MenuBar from './MenuBar';
-import BackButton from './BackButton';
+import MenuBar from '../common/MenuBar';
+import BackButton from '../common/BackButton';
 
 export default function UserForm() {
   const { userId } = useParams(); // Obtiene el ID del usuario desde la URL si está presente
