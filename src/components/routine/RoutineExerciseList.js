@@ -69,7 +69,7 @@ export default function RoutineExerciseList() {
   const formatRoutineForDay = (exercisesList) => {
     return exercisesList.map((exercise, index) => {
       const exerciseData = exercises[exercise.exerciseId];
-      return `${index + 1}. ${exerciseData.name}\n${exercise.series} series de ${exercise.repetitions} repeticiones\nPeso: ${exercise.weight}\n${exerciseData.videoLink ? `\nVer video: ${exerciseData.videoLink}` : ''}`;
+      return `${index + 1}. ${exerciseData.name}\n${exercise.series} series de ${exercise.repetitions} repeticiones\nPeso: ${exercise.weight}\n${exerciseData.videoLink ? `Ver video: ${exerciseData.videoLink}` : ''}`;
     }).join('\n\n');
   };
 

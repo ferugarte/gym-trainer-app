@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, TextField, MenuItem, Typography } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updatePassword } from 'firebase/auth';
 import { db, auth } from '../../firebaseConfig';
 import SubmitButton from '../common/SubmitButton';
 import { CssBaseline } from '@mui/material';
@@ -26,19 +26,23 @@ export default function UserForm() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (userId) {
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setName(userData.name);
-          setEmail(userData.email);
-          setUserType(userData.userType);
-          if (userData.userType === 'entrenador') {
-            setPhoneNumber(userData.phoneNumber || '');
-            setGym(userData.gym || '');
-            setCity(userData.city || '');
+        try {
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setName(userData.name);
+            setEmail(userData.email);
+            setUserType(userData.userType);
+            if (userData.userType === 'entrenador') {
+              setPhoneNumber(userData.phoneNumber || '');
+              setGym(userData.gym || '');
+              setCity(userData.city || '');
+            }
+          } else {
+            console.error("No se encontró el usuario.");
           }
-        } else {
-          console.error("No se encontró el usuario.");
+        } catch (error) {
+          console.error("Error al obtener los datos del usuario:", error);
         }
       }
     };
@@ -54,16 +58,26 @@ export default function UserForm() {
       if (userId) {
         // Modo edición: actualizar el usuario existente
         uid = userId;
-        await setDoc(doc(db, 'users', uid), {
+        const userRef = doc(db, 'users', uid);
+        
+        const updatedUserData = {
           name,
           email,
-          // Solo actualiza la contraseña si se ha cambiado
-          ...(password && { password }),
           userType,
           phoneNumber: userType === 'entrenador' ? phoneNumber : null,
           gym: userType === 'entrenador' ? gym : null,
           city: userType === 'entrenador' ? city : null,
-        });
+        };
+
+        if (password) {
+          // Si se ingresó una nueva contraseña, actualizarla en Firebase Authentication
+          const user = auth.currentUser;
+          if (user) {
+            await updatePassword(user, password);
+          }
+        }
+
+        await setDoc(userRef, updatedUserData, { merge: true });
         alert('Usuario actualizado correctamente');
       } else {
         // Modo agregar: crear un nuevo usuario en Firebase Authentication
@@ -123,6 +137,7 @@ export default function UserForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required={!userId} // Solo requerido al agregar un nuevo usuario
+            helperText={userId ? 'Dejar en blanco para no cambiar' : ''}
           />
           <TextField
             label="Tipo de Usuario"

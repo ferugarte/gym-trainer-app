@@ -9,6 +9,7 @@ import ExerciseList from './components/exercise/ExerciseList';
 import RoutineList from './components/routine/RoutineList';
 import RoutineForm from './components/routine/RoutineForm';
 import ExerciseForm from './components/exercise/ExerciseForm';
+import UserForm from './components/user/UserForm'; 
 import UserList from './components/user/UserList';
 import { auth } from './firebaseConfig';
 import RoutineExerciseList from './components/routine/RoutineExerciseList';
@@ -51,6 +52,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/add-exercise" element={<PrivateRoute><ExerciseForm /></PrivateRoute>} />
         <Route path="/user-list" element={ <PrivateRoute> <UserList /> </PrivateRoute> } />
+        <Route path="/edit-user/:userId" element={<PrivateRoute><UserForm /></PrivateRoute>} />
       </Routes>
     </Router>
   );
