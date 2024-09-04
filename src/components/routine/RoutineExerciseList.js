@@ -92,14 +92,11 @@ export default function RoutineExerciseList() {
     return token;
   };
 
-  const handleSendWhatsApp = async (day, exercisesList) => {
+  const handleSendWhatsApp = (day, exercisesList) => {
     if (studentData && routine) {
       const formattedRoutine = formatRoutineForDay(exercisesList);
-      const token = await generateToken(routineId, day); // Genera el token
-  
-      const trainingLink = `${window.location.origin}/training-timer/${routineId}/${day}?token=${token}`;
-      const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPodés ver y seguir tu rutina en el siguiente enlace: ${trainingLink}`;
-      
+      const timerLink = `${window.location.origin}/training-timer/${routineId}/${day}`; // Genera el enlace al temporizador
+      const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPuedes ver los detalles de tu entrenamiento aquí: ${timerLink}`;
       const whatsappURL = `https://wa.me/${studentData.phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappURL, '_blank');
     } else {
