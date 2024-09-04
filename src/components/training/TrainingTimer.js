@@ -1,23 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Typography, Button, List, ListItem, ListItemText, Box } from '@mui/material';
+import { Container, Typography, Button, List, ListItem, ListItemText, Box, AppBar, Toolbar } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import MenuBar from '../common/MenuBar';
-import CssBaseline from '@mui/material/CssBaseline';
-import dayjs from 'dayjs';  // Asegúrate de que dayjs está instalado para manejar las fechas
+import dayjs from 'dayjs';
 
 const TrainingTimer = () => {
-  const { routineId, day } = useParams(); 
+  const { routineId, day } = useParams();
   const [exercises, setExercises] = useState({});
   const [routine, setRoutine] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [time, setTime] = useState(60); 
+  const [time, setTime] = useState(60); // Tiempo por defecto en segundos (1 minuto)
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isExpired, setIsExpired] = useState(false); // Estado para verificar la expiración del enlace
+  const [isExpired, setIsExpired] = useState(false);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -28,8 +26,7 @@ const TrainingTimer = () => {
         const routineData = routineDoc.data();
         setRoutine(routineData);
 
-        // Comparar la fecha de expiración con la fecha actual
-        const expirationDate = routineData.expirationDate.toDate(); // Suponiendo que expirationDate es un campo Timestamp
+        const expirationDate = routineData.expirationDate.toDate();
         const currentDate = new Date();
 
         if (currentDate > expirationDate) {
@@ -67,7 +64,7 @@ const TrainingTimer = () => {
     let timer;
     if (isRunning && time > 0) {
       timer = setTimeout(() => {
-        setTime(prevTime => prevTime - 1);
+        setTime((prevTime) => prevTime - 1);
       }, 1000);
     } else if (time === 0) {
       audioRef.current.play();
@@ -122,9 +119,14 @@ const TrainingTimer = () => {
   }
 
   return (
-    <div style={{ display: 'flex' }}>
-      <CssBaseline />
-      <MenuBar />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <AppBar position="static" sx={{ backgroundColor: '#900C3F' }}>
+        <Toolbar>
+          <Typography variant="h6" component="div">
+            Gym Trainer App
+          </Typography>
+        </Toolbar>
+      </AppBar>
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="md">
           <Typography variant="h4" component="h1" gutterBottom>
@@ -145,7 +147,7 @@ const TrainingTimer = () => {
                 border: '4px solid',
                 borderColor: getTimerColor(),
                 padding: '20px',
-                borderRadius: '8px'
+                borderRadius: '8px',
               }}
             >
               {formatTime(time)}
