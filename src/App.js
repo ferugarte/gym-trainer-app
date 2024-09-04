@@ -13,6 +13,7 @@ import UserForm from './components/user/UserForm';
 import UserList from './components/user/UserList';
 import { auth } from './firebaseConfig';
 import RoutineExerciseList from './components/routine/RoutineExerciseList';
+import TrainingTimer from './components/training/TrainingTimer';
 
 function PrivateRoute({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -53,6 +54,8 @@ function App() {
         <Route path="/add-exercise" element={<PrivateRoute><ExerciseForm /></PrivateRoute>} />
         <Route path="/user-list" element={ <PrivateRoute> <UserList /> </PrivateRoute> } />
         <Route path="/edit-user/:userId" element={<PrivateRoute><UserForm /></PrivateRoute>} />
+        {/* Nueva ruta pública para TrainingTimer */}
+        <Route path="/training-timer/:routineId/:day" element={<TrainingTimer />} />      
       </Routes>
     </Router>
   );

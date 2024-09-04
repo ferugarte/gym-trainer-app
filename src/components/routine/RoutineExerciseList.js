@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, List, ListItem, ListItemText, IconButton, Box, Paper, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import TimerIcon from '@mui/icons-material/Timer';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
@@ -8,6 +9,8 @@ import { db } from '../../firebaseConfig';
 import MenuBar from '../common/MenuBar';
 import CssBaseline from '@mui/material/CssBaseline';
 import BackButton from '../common/BackButton';
+import { v4 as uuidv4 } from 'uuid'; // Utiliza el paquete uuid para generar tokens únicos
+import { addDoc } from 'firebase/firestore'; // Para almacenar el token en la base de datos
 
 export default function RoutineExerciseList() {
   const { routineId } = useParams();
@@ -73,15 +76,40 @@ export default function RoutineExerciseList() {
     }).join('\n\n');
   };
 
-  const handleSendWhatsApp = (day, exercisesList) => {
+  // Genera el token y almacena la fecha de expiración en Firebase
+  const generateToken = async (routineId, day) => {
+    const token = uuidv4();
+    const expirationDate = new Date();
+    expirationDate.setHours(expirationDate.getHours() + 12); // Expira en 12 horas
+
+    await addDoc(collection(db, 'tokens'), {
+      routineId,
+      day,
+      token,
+      expirationDate
+    });
+
+    return token;
+  };
+
+  const handleSendWhatsApp = async (day, exercisesList) => {
     if (studentData && routine) {
       const formattedRoutine = formatRoutineForDay(exercisesList);
-      const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}`;
+      const token = await generateToken(routineId, day); // Genera el token
+  
+      const trainingLink = `${window.location.origin}/training-timer/${routineId}/${day}?token=${token}`;
+      const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPodés ver y seguir tu rutina en el siguiente enlace: ${trainingLink}`;
+      
       const whatsappURL = `https://wa.me/${studentData.phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappURL, '_blank');
     } else {
       console.error('Faltan datos para enviar el mensaje por WhatsApp.');
     }
+  };
+
+  const handleStartTimer = (day, exercisesList) => {
+    // Redirigir a la pantalla del temporizador con los ejercicios del día seleccionado
+    navigate(`/training-timer/${routineId}/${day}`);
   };
 
   return (
@@ -107,15 +135,26 @@ export default function RoutineExerciseList() {
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                         <Typography variant="h6">{day}</Typography>
-                        <IconButton
-                          color="primary"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Evita que el Accordion se expanda/cierre al hacer clic en el botón de WhatsApp
-                            handleSendWhatsApp(day, routine.routineByDay[day]);
-                          }}
-                        >
-                          <WhatsAppIcon />
-                        </IconButton>
+                        <Box>
+                          <IconButton
+                            color="primary"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evita que el Accordion se expanda/cierre al hacer clic en el botón de WhatsApp
+                              handleSendWhatsApp(day, routine.routineByDay[day]);
+                            }}
+                          >
+                            <WhatsAppIcon />
+                          </IconButton>
+                          <IconButton
+                            color="primary"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evita que el Accordion se expanda/cierre al hacer clic en el botón de temporizador
+                              handleStartTimer(day, routine.routineByDay[day]);
+                            }}
+                          >
+                            <TimerIcon />
+                          </IconButton>
+                        </Box>
                       </Box>
                     </AccordionSummary>
                     <AccordionDetails>
