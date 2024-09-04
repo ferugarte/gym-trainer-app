@@ -193,7 +193,7 @@ const TrainingTimer = () => {
             )}
 
             <audio ref={audioRef}>
-              <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav" />
+              <source src="https://www.soundjay.com/buttons/sounds/beep-09.mp3" type="audio/wav" />
               Tu navegador no soporta el sonido de alarma.
             </audio>
           </Box>
