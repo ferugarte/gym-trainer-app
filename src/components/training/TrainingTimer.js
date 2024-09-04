@@ -101,12 +101,25 @@ const TrainingTimer = () => {
   const formatRoutineForDay = (exercisesList) => {
     return exercisesList.map((exercise, index) => {
       const exerciseData = exercises[exercise.exerciseId];
+  
+      if (!exerciseData) {
+        console.warn(`El ejercicio con ID ${exercise.exerciseId} no se encontró.`);
+        return {
+          name: 'Ejercicio no disponible',
+          details: 'Información no disponible'
+        };
+      }
+  
+      const { name, videoLink } = exerciseData;
+      const { series, repetitions, weight } = exercise;
+  
       return {
-        name: exerciseData.name,
-        details: `${exercise.series} series de ${exercise.repetitions} repeticiones\nPeso: ${exercise.weight}\n${exerciseData.videoLink ? `Ver video: ${exerciseData.videoLink}` : ''}`
+        name: name || 'Nombre no disponible',
+        details: `${series} series de ${repetitions} repeticiones\nPeso: ${weight}\n${videoLink ? `Ver video: ${videoLink}` : ''}`
       };
     });
   };
+  
 
   if (isExpired) {
     return (

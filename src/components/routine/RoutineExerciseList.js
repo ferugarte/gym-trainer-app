@@ -16,6 +16,7 @@ export default function RoutineExerciseList() {
   const [routine, setRoutine] = useState(null);
   const [exercises, setExercises] = useState({});
   const [studentData, setStudentData] = useState(null);
+  const [token, setToken] = useState(null); // Guardar el token generado aquí
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,72 +63,93 @@ export default function RoutineExerciseList() {
       }
     };
 
+    const generateAndStoreToken = async () => {
+      const newToken = uuidv4();
+      const expirationDate = new Date();
+      expirationDate.setHours(expirationDate.getHours() + 12); // Expira en 12 horas
+
+      try {
+        await addDoc(collection(db, 'tokens'), {
+          routineId,
+          token: newToken,
+          expirationDate
+        });
+        setToken(newToken); // Guardar el token en el estado
+      } catch (error) {
+        console.error('Error al generar el token:', error);
+      }
+    };
+
     fetchRoutine();
     fetchExercises();
-  }, [routineId, navigate]);
+
+    if (!token) {
+      generateAndStoreToken(); // Generar el token solo una vez al cargar la página
+    }
+  }, [routineId, navigate, token]);
 
   const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   const formatRoutineForDay = (exercisesList) => {
-    return exercisesList.map((exercise, index) => {
-      const exerciseData = exercises[exercise.exerciseId];
-      return `${index + 1}. ${exerciseData.name}\n${exercise.series} series de ${exercise.repetitions} repeticiones\nPeso: ${exercise.weight}\n${exerciseData.videoLink ? `Ver video: ${exerciseData.videoLink}` : ''}`;
-    }).join('\n\n');
+    return exercisesList
+      .map((exercise, index) => {
+        const exerciseData = exercises[exercise.exerciseId];
+  
+        // Verificar si los datos del ejercicio existen
+        if (!exerciseData) {
+          console.warn(`El ejercicio con ID ${exercise.exerciseId} no se encontró.`);
+          return `${index + 1}. Ejercicio no disponible\nInformación no disponible`;
+        }
+  
+        const { name, videoLink } = exerciseData;
+        const { series, repetitions, weight } = exercise;
+  
+        return `${index + 1}. ${name || 'Nombre no disponible'}\n${series} series de ${repetitions} repeticiones\nPeso: ${weight}\n${videoLink ? `Ver video: ${videoLink}` : ''}`;
+      })
+      .join('\n\n');
   };
+  
 
-  // Generar y almacenar el token
-  const generateToken = async (routineId, day) => {
-    const token = uuidv4();
-    const expirationDate = new Date();
-    expirationDate.setHours(expirationDate.getHours() + 12); // Expira en 12 horas
-
-    try {
-      await addDoc(collection(db, 'tokens'), {
-        routineId,
-        day,
-        token,
-        expirationDate
-      });
-
-      return token;
-    } catch (error) {
-      console.error('Error al generar el token:', error);
-      return null;
-    }
-  };
-
-  const handleSendWhatsApp = async (day, exercisesList) => {
-    if (studentData && routine) {
-      const formattedRoutine = formatRoutineForDay(exercisesList);
-
-      // Generar el token antes de enviar el mensaje de WhatsApp
-      const token = await generateToken(routineId, day);
-      if (!token) {
-        alert('Hubo un error al generar el enlace de acceso.');
-        return;
-      }
-
-      const timerLink = `${window.location.origin}/training-timer/${routineId}/${day}?token=${token}`; // Incluir el token en el enlace
-      const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPuedes ver los detalles de tu entrenamiento aquí: ${timerLink}`;
-      const whatsappURL = `https://wa.me/${studentData.phone}?text=${encodeURIComponent(message)}`;
-      
-      window.open(whatsappURL, '_blank');
-    } else {
-      console.error('Faltan datos para enviar el mensaje por WhatsApp.');
-    }
-  };
-
-  // Manejar el clic del temporizador y generar el token
-  const handleStartTimer = async (day, exercisesList) => {
-    // Generar el token antes de redirigir al temporizador
-    const token = await generateToken(routineId, day);
-    if (!token) {
-      alert('Hubo un error al generar el enlace de acceso.');
+  const handleSendWhatsApp = (day, exercisesList) => {
+    if (!studentData) {
+      console.error('Datos del estudiante no disponibles.');
       return;
     }
+  
+    if (!routine) {
+      console.error('Datos de la rutina no disponibles.');
+      return;
+    }
+  
+    if (!token) {
+      console.error('Token no disponible.');
+      return;
+    }
+  
+    // Formatear la rutina para el día específico
+    const formattedRoutine = formatRoutineForDay(exercisesList);
+  
+    // Generar enlace del temporizador con el token
+    const timerLink = `${window.location.origin}/training-timer/${routineId}/${day}?token=${token}`;
+  
+    // Construir el mensaje
+    const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPuedes ver los detalles de tu entrenamiento aquí: ${timerLink}`;
+  
+    // Construir URL de WhatsApp con el mensaje
+    const whatsappURL = `https://wa.me/${studentData.phone}?text=${encodeURIComponent(message)}`;
+  
+    // Abrir la URL de WhatsApp en una nueva pestaña
+    window.open(whatsappURL, '_blank');
+  };
+  
 
-    // Redirigir a la pantalla del temporizador con el token
-    navigate(`/training-timer/${routineId}/${day}?token=${token}`);
+  const handleStartTimer = (day) => {
+    if (token) {
+      // Redirigir a la pantalla del temporizador con el token almacenado
+      navigate(`/training-timer/${routineId}/${day}?token=${token}`);
+    } else {
+      console.error('Token no disponible.');
+    }
   };
 
   return (
@@ -167,7 +189,7 @@ export default function RoutineExerciseList() {
                             color="primary"
                             onClick={(e) => {
                               e.stopPropagation(); // Evita que el Accordion se expanda/cierre al hacer clic en el botón de temporizador
-                              handleStartTimer(day, routine.routineByDay[day]);
+                              handleStartTimer(day);
                             }}
                           >
                             <TimerIcon />
