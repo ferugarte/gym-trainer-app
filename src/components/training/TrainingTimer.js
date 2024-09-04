@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Typography, Button, List, ListItem, ListItemText, Box, AppBar, Toolbar } from '@mui/material';
+import { Container, Typography, Button, List, ListItem, ListItemText, Box, AppBar, Toolbar, Tabs, Tab } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import { useParams } from 'react-router-dom';
@@ -16,6 +16,7 @@ const TrainingTimer = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+  const [tabIndex, setTabIndex] = useState(0); // Controlador de pestañas
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -119,7 +120,10 @@ const TrainingTimer = () => {
       };
     });
   };
-  
+
+  const handleTabChange = (event, newValue) => {
+    setTabIndex(newValue);
+  };
 
   if (isExpired) {
     return (
@@ -140,81 +144,27 @@ const TrainingTimer = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
+      <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px'}}>
         <Container maxWidth="md">
           <Typography variant="h4" component="h1" gutterBottom>
-            ⏱️ Temporizador para {studentData?.name || 'Alumno'}
+            Hola {studentData?.name || 'Alumno'}, aquí tenés tu rutina de hoy 💪
           </Typography>
 
-          {/* Temporizador */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              Tiempo Restante
-            </Typography>
-            <Typography
-              variant="h2"
-              gutterBottom
-              sx={{
-                color: getTimerColor(),
-                fontWeight: 'bold',
-                border: '4px solid',
-                borderColor: getTimerColor(),
-                padding: '20px',
-                borderRadius: '8px',
-              }}
+          {/* Tabs */}
+          <Box sx={{ marginBottom: 2 }}>
+            <Tabs
+              value={tabIndex}
+              onChange={handleTabChange}
+              aria-label="Rutina y Temporizador"
+              sx={{ backgroundColor: '#E0E0E0' }}
             >
-              {formatTime(time)}
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              {[1, 2, 3, 4].map((minute) => (
-                <Button
-                  key={minute}
-                  variant={minute * 60 === time ? 'contained' : 'outlined'}
-                  onClick={() => setTime(minute * 60)}
-                >
-                  {minute} Min
-                </Button>
-              ))}
-            </Box>
-
-            {!isRunning ? (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PlayArrowIcon />}
-                onClick={handleStartTimer}
-              >
-                Play
-              </Button>
-            ) : isPaused ? (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PlayArrowIcon />}
-                onClick={handleResumeTimer}
-              >
-                Resume
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<PauseIcon />}
-                onClick={handlePauseTimer}
-              >
-                Pausa
-              </Button>
-            )}
-
-            <audio ref={audioRef}>
-              <source src="https://www.soundjay.com/buttons/sounds/beep-09.mp3" type="audio/wav" />
-              Tu navegador no soporta el sonido de alarma.
-            </audio>
+              <Tab label="Rutina" />
+              <Tab label="Temporizador" />
+            </Tabs>
           </Box>
 
-          {/* Rutina de Entrenamiento */}
-          {routine && routine.routineByDay[day] && (
+          {/* Tab Panels */}
+          {tabIndex === 0 && routine && routine.routineByDay[day] && (
             <>
               <Typography variant="h5" component="h2" gutterBottom>
                 🏋️‍♂️ Rutina para el día {day}
@@ -230,6 +180,74 @@ const TrainingTimer = () => {
                 ))}
               </List>
             </>
+          )}
+
+          {tabIndex === 1 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+              <Typography variant="h5" gutterBottom>
+                Tiempo Restante
+              </Typography>
+              <Typography
+                variant="h2"
+                gutterBottom
+                sx={{
+                  color: getTimerColor(),
+                  fontWeight: 'bold',
+                  border: '4px solid',
+                  borderColor: getTimerColor(),
+                  padding: '20px',
+                  borderRadius: '8px',
+                }}
+              >
+                {formatTime(time)}
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                {[1, 2, 3, 4].map((minute) => (
+                  <Button
+                    key={minute}
+                    variant={minute * 60 === time ? 'contained' : 'outlined'}
+                    onClick={() => setTime(minute * 60)}
+                  >
+                    {minute} Min
+                  </Button>
+                ))}
+              </Box>
+
+              {!isRunning ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<PlayArrowIcon />}
+                  onClick={handleStartTimer}
+                >
+                  Play
+                </Button>
+              ) : isPaused ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<PlayArrowIcon />}
+                  onClick={handleResumeTimer}
+                >
+                  Resume
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<PauseIcon />}
+                  onClick={handlePauseTimer}
+                >
+                  Pausa
+                </Button>
+              )}
+
+              <audio ref={audioRef}>
+                <source src="https://www.soundjay.com/buttons/sounds/beep-09.mp3" type="audio/wav" />
+                Tu navegador no soporta el sonido de alarma.
+              </audio>
+            </Box>
           )}
         </Container>
       </main>
