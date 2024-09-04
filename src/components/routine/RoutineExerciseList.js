@@ -4,13 +4,12 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import TimerIcon from '@mui/icons-material/Timer';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore'; // Para agregar el token
 import { db } from '../../firebaseConfig';
 import MenuBar from '../common/MenuBar';
 import CssBaseline from '@mui/material/CssBaseline';
 import BackButton from '../common/BackButton';
 import { v4 as uuidv4 } from 'uuid'; // Utiliza el paquete uuid para generar tokens únicos
-import { addDoc } from 'firebase/firestore'; // Para almacenar el token en la base de datos
 
 export default function RoutineExerciseList() {
   const { routineId } = useParams();
@@ -76,37 +75,59 @@ export default function RoutineExerciseList() {
     }).join('\n\n');
   };
 
-  // Genera el token y almacena la fecha de expiración en Firebase
+  // Generar y almacenar el token
   const generateToken = async (routineId, day) => {
     const token = uuidv4();
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() + 12); // Expira en 12 horas
 
-    await addDoc(collection(db, 'tokens'), {
-      routineId,
-      day,
-      token,
-      expirationDate
-    });
+    try {
+      await addDoc(collection(db, 'tokens'), {
+        routineId,
+        day,
+        token,
+        expirationDate
+      });
 
-    return token;
+      return token;
+    } catch (error) {
+      console.error('Error al generar el token:', error);
+      return null;
+    }
   };
 
-  const handleSendWhatsApp = (day, exercisesList) => {
+  const handleSendWhatsApp = async (day, exercisesList) => {
     if (studentData && routine) {
       const formattedRoutine = formatRoutineForDay(exercisesList);
-      const timerLink = `${window.location.origin}/training-timer/${routineId}/${day}`; // Genera el enlace al temporizador
+
+      // Generar el token antes de enviar el mensaje de WhatsApp
+      const token = await generateToken(routineId, day);
+      if (!token) {
+        alert('Hubo un error al generar el enlace de acceso.');
+        return;
+      }
+
+      const timerLink = `${window.location.origin}/training-timer/${routineId}/${day}?token=${token}`; // Incluir el token en el enlace
       const message = `Hola ${studentData.name}, esta es tu rutina para el día ${day}:\n\n${formattedRoutine}\n\nPuedes ver los detalles de tu entrenamiento aquí: ${timerLink}`;
       const whatsappURL = `https://wa.me/${studentData.phone}?text=${encodeURIComponent(message)}`;
+      
       window.open(whatsappURL, '_blank');
     } else {
       console.error('Faltan datos para enviar el mensaje por WhatsApp.');
     }
   };
 
-  const handleStartTimer = (day, exercisesList) => {
-    // Redirigir a la pantalla del temporizador con los ejercicios del día seleccionado
-    navigate(`/training-timer/${routineId}/${day}`);
+  // Manejar el clic del temporizador y generar el token
+  const handleStartTimer = async (day, exercisesList) => {
+    // Generar el token antes de redirigir al temporizador
+    const token = await generateToken(routineId, day);
+    if (!token) {
+      alert('Hubo un error al generar el enlace de acceso.');
+      return;
+    }
+
+    // Redirigir a la pantalla del temporizador con el token
+    navigate(`/training-timer/${routineId}/${day}?token=${token}`);
   };
 
   return (
