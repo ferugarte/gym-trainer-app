@@ -1,88 +1,104 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Typography, Button, List, ListItem, ListItemText, Box } from '@mui/material';
-import { useParams, useLocation } from 'react-router-dom';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import { useParams } from 'react-router-dom';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import MenuBar from '../common/MenuBar';
 import CssBaseline from '@mui/material/CssBaseline';
+import dayjs from 'dayjs';  // Asegúrate de que dayjs está instalado para manejar las fechas
 
 const TrainingTimer = () => {
-  const { routineId, day } = useParams();
-  const location = useLocation();
+  const { routineId, day } = useParams(); 
   const [exercises, setExercises] = useState({});
   const [routine, setRoutine] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [isValid, setIsValid] = useState(false);
-  const [time, setTime] = useState(60);
+  const [time, setTime] = useState(60); 
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isExpired, setIsExpired] = useState(false); // Estado para verificar la expiración del enlace
   const audioRef = useRef(null);
 
-  const searchParams = new URLSearchParams(location.search);
-  const token = searchParams.get('token'); // Obtiene el token de la URL
-
   useEffect(() => {
-    const validateToken = async () => {
-      const q = query(collection(db, 'tokens'), where('token', '==', token), where('routineId', '==', routineId), where('day', '==', day));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        setIsValid(false);
-      } else {
-        const tokenDoc = querySnapshot.docs[0].data();
-        const now = new Date();
-        if (tokenDoc.expirationDate.toDate() >= now) {
-          setIsValid(true);
-        } else {
-          setIsValid(false);
-        }
-      }
-    };
-
-    validateToken();
-
     const fetchRoutine = async () => {
       const routineRef = doc(db, 'routines', routineId);
       const routineDoc = await getDoc(routineRef);
       if (routineDoc.exists()) {
-        setRoutine(routineDoc.data());
-        const studentId = routineDoc.data().studentId;
-        const studentRef = doc(db, 'students', studentId);
-        const studentDoc = await getDoc(studentRef);
-        setStudentData(studentDoc.data());
+        const routineData = routineDoc.data();
+        setRoutine(routineData);
+
+        // Comparar la fecha de expiración con la fecha actual
+        const expirationDate = routineData.expirationDate.toDate(); // Suponiendo que expirationDate es un campo Timestamp
+        const currentDate = new Date();
+
+        if (currentDate > expirationDate) {
+          setIsExpired(true); // El enlace ha expirado
+        } else {
+          const studentId = routineData.studentId;
+          const studentRef = doc(db, 'students', studentId);
+          const studentDoc = await getDoc(studentRef);
+          setStudentData(studentDoc.data());
+        }
       }
     };
 
     const fetchExercises = async () => {
-      const querySnapshot = await getDocs(collection(db, 'exercises'));
-      const exerciseMap = {};
-      querySnapshot.forEach((doc) => {
-        exerciseMap[doc.id] = {
-          name: doc.data().name,
-          videoLink: doc.data().videoLink || '',
-        };
-      });
-      setExercises(exerciseMap);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'exercises'));
+        const exerciseMap = {};
+        querySnapshot.forEach((doc) => {
+          exerciseMap[doc.id] = {
+            name: doc.data().name,
+            videoLink: doc.data().videoLink || '',
+          };
+        });
+        setExercises(exerciseMap);
+      } catch (error) {
+        console.error("Error al obtener los ejercicios:", error);
+      }
     };
 
     fetchRoutine();
     fetchExercises();
-  }, [routineId, day, token]);
+  }, [routineId]);
 
-  if (!isValid) {
-    return (
-      <Container maxWidth="md">
-        <Typography variant="h4" component="h1" gutterBottom>
-          El enlace ha expirado o es inválido.
-        </Typography>
-      </Container>
-    );
-  }
+  useEffect(() => {
+    let timer;
+    if (isRunning && time > 0) {
+      timer = setTimeout(() => {
+        setTime(prevTime => prevTime - 1);
+      }, 1000);
+    } else if (time === 0) {
+      audioRef.current.play();
+      setIsRunning(false);
+    }
+    return () => clearTimeout(timer);
+  }, [time, isRunning]);
+
+  const handleStartTimer = () => {
+    setIsRunning(true);
+    setIsPaused(false);
+  };
+
+  const handlePauseTimer = () => {
+    setIsPaused(true);
+    setIsRunning(false);
+  };
+
+  const handleResumeTimer = () => {
+    setIsPaused(false);
+    setIsRunning(true);
+  };
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const getTimerColor = () => {
+    return time <= 10 ? 'red' : 'green';
   };
 
   const formatRoutineForDay = (exercisesList) => {
@@ -95,6 +111,16 @@ const TrainingTimer = () => {
     });
   };
 
+  if (isExpired) {
+    return (
+      <Container>
+        <Typography variant="h4" component="h1" gutterBottom>
+          ❌ El enlace ha expirado
+        </Typography>
+      </Container>
+    );
+  }
+
   return (
     <div style={{ display: 'flex' }}>
       <CssBaseline />
@@ -105,6 +131,74 @@ const TrainingTimer = () => {
             ⏱️ Temporizador para {studentData?.name || 'Alumno'}
           </Typography>
 
+          {/* Temporizador */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+            <Typography variant="h5" gutterBottom>
+              Tiempo Restante
+            </Typography>
+            <Typography
+              variant="h2"
+              gutterBottom
+              sx={{
+                color: getTimerColor(),
+                fontWeight: 'bold',
+                border: '4px solid',
+                borderColor: getTimerColor(),
+                padding: '20px',
+                borderRadius: '8px'
+              }}
+            >
+              {formatTime(time)}
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              {[1, 2, 3, 4].map((minute) => (
+                <Button
+                  key={minute}
+                  variant={minute * 60 === time ? 'contained' : 'outlined'}
+                  onClick={() => setTime(minute * 60)}
+                >
+                  {minute} Min
+                </Button>
+              ))}
+            </Box>
+
+            {!isRunning ? (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<PlayArrowIcon />}
+                onClick={handleStartTimer}
+              >
+                Play
+              </Button>
+            ) : isPaused ? (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<PlayArrowIcon />}
+                onClick={handleResumeTimer}
+              >
+                Resume
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<PauseIcon />}
+                onClick={handlePauseTimer}
+              >
+                Pausa
+              </Button>
+            )}
+
+            <audio ref={audioRef}>
+              <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav" />
+              Tu navegador no soporta el sonido de alarma.
+            </audio>
+          </Box>
+
+          {/* Rutina de Entrenamiento */}
           {routine && routine.routineByDay[day] && (
             <>
               <Typography variant="h5" component="h2" gutterBottom>
