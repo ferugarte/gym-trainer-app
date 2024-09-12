@@ -3,8 +3,9 @@ import { Container, Typography, TextField, IconButton, Table, TableBody, TableCe
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 import { useNavigate, useParams } from 'react-router-dom';
-import { collection, getDocs, deleteDoc, doc, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, getDoc, query, where, addDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import MenuBar from '../common/MenuBar';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -76,14 +77,15 @@ export default function RoutineList() {
       try {
         await deleteDoc(doc(db, 'routines', id));
         alert('Rutina eliminada exitosamente');
-        setRoutines(routines.filter(routine => routine.id !== id));
-        filterRoutines(routines, nameFilter, userType, trainerId);
+        setFilteredRoutines(filteredRoutines.filter(routine => routine.id !== id)); // Actualiza la lista filtrada
+        setRoutines(routines.filter(routine => routine.id !== id)); // Actualiza la lista original
       } catch (error) {
         console.error("Error al eliminar la rutina: ", error);
         alert('Hubo un error al eliminar la rutina.');
       }
     }
   };
+  
 
   const handleEdit = (id) => {
     navigate(`/routine-form/${id}`);
@@ -91,6 +93,24 @@ export default function RoutineList() {
 
   const handleViewExercises = (id) => {
     navigate(`/routine-exercise-list/${id}`);
+  };
+
+  const handleDuplicateRoutine = async (routine) => {
+    try {
+      // Duplicar la rutina con el nombre nuevo "(copia)"
+      const newRoutine = {
+        ...routine,
+        name: `${routine.name} (copia)`,
+        createdAt: new Date(),
+      };
+      delete newRoutine.id; // Eliminar el campo 'id' para evitar conflictos al crear el documento
+      const docRef = await addDoc(collection(db, 'routines'), newRoutine);
+      alert('Rutina duplicada exitosamente');
+      navigate(`/routine-form/${docRef.id}`); // Navegar a la nueva rutina para que el usuario la edite
+    } catch (error) {
+      console.error("Error al duplicar la rutina: ", error);
+      alert('Hubo un error al duplicar la rutina.');
+    }
   };
 
   return (
@@ -140,6 +160,11 @@ export default function RoutineList() {
                       <Tooltip title="Ver Ejercicios">
                         <IconButton color="primary" onClick={() => handleViewExercises(routine.id)}>
                           <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Duplicar">
+                        <IconButton color="primary" onClick={() => handleDuplicateRoutine(routine)}>
+                          <FileCopyIcon />
                         </IconButton>
                       </Tooltip>
                     </TableCell>
