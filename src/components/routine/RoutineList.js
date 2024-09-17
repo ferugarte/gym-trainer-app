@@ -120,7 +120,7 @@ export default function RoutineList() {
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
-            Lista de Rutinas
+            Lista de Rutinas Semanales
           </Typography>
 
           <TextField
