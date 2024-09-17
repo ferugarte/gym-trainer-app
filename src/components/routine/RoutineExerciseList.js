@@ -202,10 +202,12 @@ export default function RoutineExerciseList() {
                         {routine.routineByDay[day].map((exercise, index) => (
                           <ListItem key={index}>
                             <ListItemText
-                              primary={exercises[exercise.exerciseId].name} // Mostrando el nombre del ejercicio
-                              secondary={`Series: ${exercise.series}, Repeticiones: ${exercise.repetitions}, Peso: ${exercise.weight}\n${exercises[exercise.exerciseId].videoLink ? `Ver video: ${exercises[exercise.exerciseId].videoLink}` : ''}`}
+                              primary={exercises[exercise.exerciseId] ? exercises[exercise.exerciseId].name : 'Ejercicio no disponible'}
+                              secondary={exercises[exercise.exerciseId] 
+                                ? `Series: ${exercise.series}, Repeticiones: ${exercise.repetitions}, Peso: ${exercise.weight}\n${exercises[exercise.exerciseId].videoLink ? `Ver video: ${exercises[exercise.exerciseId].videoLink}` : ''}`
+                                : 'Información no disponible'}
                             />
-                          </ListItem>
+                          </ListItem>                        
                         ))}
                       </List>
                     </AccordionDetails>
