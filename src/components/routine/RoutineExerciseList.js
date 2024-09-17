@@ -159,7 +159,7 @@ export default function RoutineExerciseList() {
       <main style={{ flexGrow: 1, padding: '24px', paddingTop: '70px' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
-            Ejercicios de la Rutina
+            Ejercicios de la Rutina Semanal
           </Typography>
 
           {routine && (

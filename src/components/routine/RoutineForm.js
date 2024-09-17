@@ -198,11 +198,11 @@ export default function RoutineForm() {
       <main style={{ flexGrow: 1, padding: theme.spacing(3), paddingTop: '70px' }}>
         <Container maxWidth="sm" component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            {id ? 'Editar Rutina' : 'Agregar Rutina'}
+            {id ? 'Editar Rutina Semanal' : 'Agregar Rutina Semanal'}
           </Typography>
 
           <TextField
-            label="Nombre de la Rutina"
+            label="Nombre de la Rutina Semanal"
             variant="outlined"
             fullWidth
             margin="normal"
